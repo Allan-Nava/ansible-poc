@@ -1,0 +1,31 @@
+---
+- name: Default
+  tags:
+    - sysctl
+  copy: src={{ item.src }} dest={{ item.dest }} owner={{ item.owner }} group={{ item.group }}
+  with_items:
+    - { src: tuning.conf, dest: /etc/sysctl.d/tuning.conf, owner: root, group: root }
+
+- name: PVE
+  tags:
+    - sysctl
+    - pve
+  copy: src={{ item.src }} dest={{ item.dest }} owner={{ item.owner }} group={{ item.group }}
+  with_items:
+    - { src: tuning.pve.conf, dest: /etc/sysctl.d/tuning.conf, owner: root, group: root }
+  when: groups['pve'] is defined and inventory_hostname in groups['pve']
+
+- name: sysctl
+  tags:
+    - sysctl
+  copy: src={{ item.src }} dest={{ item.dest }} owner={{ item.owner }} group={{ item.group }}
+  with_items:
+    - { src: tuning.kvm.conf, dest: /etc/sysctl.d/tuning.conf, owner: root, group: root }
+  when: ansible_virtualization_type == 'kvm'
+
+- name: Running
+  tags:
+    - tuning
+    - sysctl
+  shell: sysctl -p /etc/sysctl.d/tuning.conf
+  ignore_errors: yes

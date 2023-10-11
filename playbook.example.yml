@@ -1,1 +1,5 @@
 - hosts: example
+  roles:
+    - packages
+    - sysctl
+    - users
