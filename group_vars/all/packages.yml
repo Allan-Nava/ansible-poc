@@ -1,0 +1,112 @@
+---
+# Basic path
+init: /etc/init.d
+prefix: /usr/local
+src_dir: "{{ prefix }}/src"
+
+# CFLAGS
+# https://wiki.gentoo.org/wiki/GCC_optimization#-march
+# However, this should not be used when intending to compile packages for different CPUs!
+# -march=native
+CFLAGS: '-O2 -pipe'
+
+packages:
+  - curl
+  - htop
+  - irqbalance
+  - jq
+  - less
+  - nfs-common
+  - numactl
+  - qemu-guest-agent
+  - rsync
+  - snmpd
+  - vim
+
+# Docker Compose
+docker_compose_version: v2.18.1
+
+# ProxySQL
+proxysql_version: 2.5.5
+
+# Vector
+vector_version: 0.32.2
+
+# NVIDIA CUDA
+cuda_keyring_version: 1.1-1
+cuda_drivers: cuda-driver-dev-11-5
+
+debian_packages:
+  - apt-transport-https
+  - aptitude
+  - arping
+  - autoconf
+  - autotools-dev
+  - bash
+  - binutils
+  - bison
+  - build-essential
+  - bzip2
+  - ca-certificates
+  - conntrack
+  - curl
+  - default-libmysqlclient-dev
+  - dnsutils
+  - file
+  - flex
+  - git
+  - gnupg2
+  - gzip
+  - htop
+  - inetutils-ping
+  - inetutils-traceroute
+  - iperf
+  - iptraf
+  - less
+  - libbz2-dev
+  - libc-ares-dev
+  - libcurl4-openssl-dev
+  - libevent-dev
+  - libglib2.0-dev
+  - libicu-dev
+  - libjemalloc-dev
+  - libjpeg-dev
+  - libncursesw5-dev
+  - libnghttp2-dev
+  - libpcre2-dev
+  - libpcre3-dev
+  - libsnappy-dev
+  - libssl-dev
+  - libtcmalloc-minimal4
+  - libwebp-dev
+  - libzip-dev
+  - libzstd-dev
+  - lsb-release
+  - lsof
+  - lzma
+  - lzma-dev
+  - mmdb-bin
+  - multitail
+  - nasm
+  - net-tools
+  - openssl
+  - parted
+  - postfix
+  - python3-apt
+  - rsync
+  - screen
+  - subversion
+  - sudo
+  - tar
+  - tcl
+  - tcl-dev
+  - ufw
+  - unattended-upgrades
+  - unzip
+  - uuid-dev
+  - vim
+  - wget
+  - xfsprogs
+  - xz-utils
+  - zlib1g
+  - zlib1g-dev
