@@ -1,0 +1,143 @@
+---
+- name: gai
+  tags:
+    - packages
+  lineinfile: dest=/etc/gai.conf line='precedence ::ffff:0:0/96  100' state=present
+
+- name: add backports repo
+  tags:
+    - packages
+  apt_repository:
+    repo: 'deb http://deb.debian.org/debian {{ ansible_distribution_release }}-backports main'
+    filename: 'backports'
+    state: present
+  when: ansible_distribution == 'Debian'
+
+- name: update all packages to the latest version
+  tags:
+    - packages
+  apt:
+    upgrade: dist
+    update_cache: yes
+
+- name: install a list of packages
+  tags:
+    - packages
+  apt:
+    name: "{{ packages }}"
+    update_cache: yes
+
+- name: add backports packages
+  tags:
+    - apt
+    - packages
+  apt:
+    name: "{{ debian_packages }}"
+    state: latest
+    update_cache: yes
+    autoclean: yes
+    autoremove: yes
+    default_release: "{{ ansible_distribution_release }}-backports"
+  when: ansible_distribution == "Debian"
+
+- name: disable nghttpx
+  tags:
+    - apt
+    - packages
+  service:
+    name: nghttpx
+    enabled: no
+  ignore_errors: true
+
+- name: stopped
+  tags:
+    - apt
+    - packages
+  service:
+    name: nghttpx
+    state: stopped
+  ignore_errors: true
+
+- name: overlay modules
+  tags:
+    - overlay
+  lineinfile:
+    state: present
+    path: /etc/modules
+    line: overlay
+
+- name: limits.conf
+  tags:
+    - limits
+  lineinfile:
+    state: present
+    path: /etc/security/limits.conf
+    line: "{{ item }}"
+    insertbefore: "^# End of file"
+  with_items:
+    - "{{ limits }}"
+
+- name: check if grub exist
+  tags:
+    - spectre
+  local_action:
+    module: stat
+    path: /etc/default/grub
+  register: grub
+  vars:
+    ansible_become: false
+
+- name: check grub (debug)
+  tags:
+    - spectre
+  debug: msg="{{ grub }}"
+
+- block:
+
+  # https://www.phoronix.com/scan.php?page=news_item&px=Global-Switch-Skip-Spectre-Melt
+  # pti=off spectre_v2=off l1tf=off nospec_store_bypass_disable no_stf_barrier
+  # https://linuxreviews.org/HOWTO_make_Linux_run_blazing_fast_(again)_on_Intel_CPUs
+  # https://forum.proxmox.com/threads/how-to-disable-spectre-meltdown-kernel-patches.58549/
+  - name: disable Intel security patch
+    tags:
+      - spectre
+    lineinfile:
+      path: /etc/default/grub
+      regex: "^GRUB_CMDLINE_LINUX="
+      line: GRUB_CMDLINE_LINUX="mitigations=off"
+      state: present
+
+  - name: update grub
+    tags:
+      - spectre
+    command: update-grub
+
+  - name: enable qemu-agent
+    tags:
+      - qemu
+    systemd:
+      name: qemu-guest-agent
+      state: started
+
+  when: grub.stat.isreg is defined and grub.stat.isreg and grub.stat.writeable
+
+
+- name: install mysql-client
+  tags:
+    - packages
+  apt:
+    pkg:
+      - mysql-client
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == 'Ubuntu'
+
+- name: install mariadb-client
+  tags:
+    - packages
+  apt:
+    pkg:
+      - mariadb-client
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == 'Debian'
