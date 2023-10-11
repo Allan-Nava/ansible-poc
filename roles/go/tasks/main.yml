@@ -1,0 +1,25 @@
+---
+- name: get go
+  tags:
+    - go
+  get_url:
+    url: "https://go.dev/dl/go{{ go_version }}.linux-{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}.tar.gz"
+    dest: "/tmp/go{{ go_version }}.linux-{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}.tar.gz"
+    mode: "0755"
+
+- name: extract go
+  tags:
+    - go
+  unarchive:
+    src: "/tmp/go{{ go_version }}.linux-{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}.tar.gz"
+    dest: "{{ prefix }}"
+    copy: no
+
+- name: env
+  tags:
+    - go
+  lineinfile:
+    create: true
+    dest: /etc/profile.d/go.sh
+    line: "export PATH=$PATH:{{ prefix}}/go/bin"
+    state: present
