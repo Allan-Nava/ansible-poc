@@ -1,0 +1,92 @@
+user nginx;
+worker_processes 2;
+pcre_jit on;
+timer_resolution 250ms;
+
+worker_rlimit_nofile 50000;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+events {
+   worker_connections 8192;
+   use epoll;
+}
+
+http {
+  # https://blog.cloudflare.com/how-we-scaled-nginx-and-saved-the-world-54-years-every-day/
+  aio       threads;
+  aio_write on;
+
+  charset UTF-8;
+  source_charset UTF-8;
+  charset_types text/xml text/plain text/vnd.wap.wml application/javascript application/x-javascript application/rss+xml text/css text/javascript;
+
+  server_tokens          off;
+  ignore_invalid_headers  on;
+
+  server_names_hash_bucket_size 512;
+  map_hash_bucket_size 3072;
+
+  default_type application/octet-stream;
+  include proxy.conf;
+  # include mime
+  include mime.types;
+
+  open_file_cache max=20000 inactive=20s;
+  open_file_cache_min_uses 2;
+  open_file_cache_errors  on;
+  open_file_cache_valid  30s;
+
+  log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                    '$status $body_bytes_sent "$http_referer" '
+                    '"$http_user_agent" "$http_x_forwarded_for"';
+
+    log_format apm '"$time_local" client=$remote_addr '
+               'method=$request_method request="$request" '
+               'request_length=$request_length '
+               'status=$status bytes_sent=$bytes_sent '
+               'body_bytes_sent=$body_bytes_sent '
+               'referer=$http_referer '
+               'user_agent="$http_user_agent" '
+               'upstream_addr=$upstream_addr '
+               'upstream_status=$upstream_status '
+               'request_time=$request_time '
+               'upstream_response_time=$upstream_response_time '
+               'upstream_connect_time=$upstream_connect_time '
+               'upstream_header_time=$upstream_header_time';
+
+  gzip on;
+  #gzip_min_length 500;
+  #gzip_proxied any;
+  gzip_disable "msie6";
+  gzip_vary on;
+  gzip_types text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript application/javascript text/x-js font/ttf font/opentype application/vnd.ms-fontobject image/svg+xml application/atom+xml application/schema+json application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml image/bmp image/x-icon image/vnd.microsoft.icon font/eot ;
+
+  client_header_buffer_size      4k;
+  large_client_header_buffers 8 16k;
+  output_buffers              8 16k;
+
+  request_pool_size    4k;
+  connection_pool_size 2k;
+
+  client_header_timeout 300;
+  client_body_timeout  3600;
+  send_timeout         3600;
+
+  client_max_body_size 2000M;
+
+  sendfile    on;
+  tcp_nopush  on;
+  tcp_nodelay on;
+
+  keepalive_timeout    3;
+  keepalive_requests 100;
+  reset_timedout_connection on;
+
+  index index.htm index.html index.php;
+
+  include /etc/nginx/conf.d/*.conf;
+
+}
+

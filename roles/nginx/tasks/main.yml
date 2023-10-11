@@ -1,0 +1,110 @@
+---
+- name: install apt key
+  tags:
+    - nginx
+  apt_key:
+    url: https://nginx.org/keys/nginx_signing.key
+    keyring: /usr/share/keyrings/nginx-archive-keyring.gpg
+    state: present
+- name: add nginx repository
+  tags:
+    - nginx
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] http://nginx.org/packages/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} nginx"
+    filename: nginx
+
+- name: install
+  tags:
+    - nginx
+  apt:
+    pkg: nginx
+    state: latest
+    update_cache: yes
+
+- name: copy templates
+  tags:
+    - nginx
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: nginx
+    mode: 0644
+    backup: "{{ item.backup | default('yes') }}"
+  with_items:
+    - {
+        src: etc/nginx/nginx.conf.j2,
+        dest: /etc/nginx/nginx.conf
+      }
+    - {
+        src: etc/nginx/proxy.conf.j2,
+        dest: /etc/nginx/proxy.conf
+      }
+    #- {
+    #    src: etc/nginx/conf.d/metrics.conf.j2,
+    #    dest: /etc/nginx/conf.d/metrics.conf
+    #  }
+  notify:
+    - nginx restart
+
+- name: copy custom conf if exists
+  tags:
+    - nginx
+  copy:
+    src: "../../../files/{{ custom_files }}/etc/nginx/conf.d/{{ item }}"
+    dest: "/etc/nginx/conf.d/{{ item }}"
+    owner: nginx
+    group: nginx
+    mode: "{{ item.mode | default('0644') }}"
+    backup: "{{ item.backup | default('yes') }}"
+  with_items:
+    - "{{ nginx_conf }}"
+  when: nginx_conf is defined
+  notify:
+    - nginx restart
+
+# ssl nginx conf
+- name: copy ssl custom conf if exists
+  tags:
+    - nginx
+  copy:
+    src: "../../../files/{{ custom_files }}/etc/nginx/conf.d/{{ item }}"
+    dest: "/etc/nginx/conf.d/{{ item }}"
+    owner: nginx
+    group: nginx
+    mode: "{{ item.mode | default('0644') }}"
+    backup: "{{ item.backup | default('yes') }}"
+  with_items:
+    - "{{ nginx_conf_ssl }}"
+  when: nginx_conf_ssl is defined
+  notify:
+    - nginx restart
+
+- name: copy certificates if exists
+  tags:
+    - nginx
+  copy:
+    src: "../../../files/{{ custom_files }}/{{ item }}"
+    dest: "/{{ item }}"
+    owner: nginx
+    group: nginx
+    mode: "{{ item.mode | default('0644') }}"
+    backup: "{{ item.backup | default('yes') }}"
+  with_items:
+    - "{{ ssl_cert }}"
+  when: ssl_cert is defined
+  notify:
+    - nginx restart
+
+- name: enable at boot
+  tags:
+    - nginx
+  service:
+    name: nginx
+    enabled: yes
+
+- name: started
+  tags:
+    - nginx
+  service:
+    name: nginx
+    state: started

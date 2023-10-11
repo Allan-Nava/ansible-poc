@@ -1,0 +1,10 @@
+[fe:children]
+host-fe-1 ansible_host=192.168.1.x
+
+[be:children]
+host-be-1 ansible_host=192.168.1.x
+
+[example]
+fe
+be
+
