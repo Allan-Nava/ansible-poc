@@ -1,0 +1,25 @@
+---
+- name: check if custom cron exists
+  tags:
+    - cron
+  local_action:
+    module: stat
+    path: "files/{{ inventory_hostname }}/etc/cron.d/{{ inventory_hostname }}"
+  register: custom_cron
+  vars:
+    ansible_become: false
+
+
+- name: copy custom cron if exists
+  tags:
+    - cron
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode | default('0644') }}"
+    backup: "{{ item.backup | default('yes') }}"
+  with_items:
+    - { src: "files/{{ inventory_hostname }}/etc/cron.d/{{ inventory_hostname }}", dest: "/etc/cron.d/{{ inventory_hostname }}", backup: "no" }
+  when: custom_cron.stat.exists
