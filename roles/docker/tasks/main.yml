@@ -1,0 +1,72 @@
+---
+- block:
+
+  - name: create a new partition
+    tags:
+      - docker
+    parted:
+      device: "{{ docker_device }}"
+      number: 1
+      label: gpt
+      align: optimal
+      state: present
+
+  - name: create a xfs filesystem on {{ docker_device }}1
+    tags:
+      - docker
+    filesystem:
+      fstype: xfs
+      dev: "{{ docker_device }}1"
+
+  - name: mount "{{ docker['data_dir'] | default('/var/lib/docker') }}"
+    tags:
+      - docker
+    mount:
+      path: "{{ docker['data_dir'] | default('/var/lib/docker') }}"
+      src: "{{ docker_device }}1"
+      fstype: xfs
+      opts: defaults,noatime
+      state: mounted
+
+  when: ansible_virtualization_type == 'kvm'
+        and
+        docker_device is defined
+
+- name: install libs
+  tags:
+    - docker
+  apt:
+    pkg:
+      - ca-certificates
+      - curl
+      - gnupg2
+      - software-properties-common
+    state: latest
+    update_cache: yes
+
+- name: install gpg key
+  tags:
+    - docker
+  apt_key:
+    url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+    keyring: /usr/share/keyrings//docker.gpg
+    state: present
+
+- name: add repository
+  tags:
+    - docker
+  apt_repository:
+    repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/{{ ansible_distribution | lower }} {{ ansible_distribution_release }} stable"
+    filename: docker
+
+- name: install Docker
+  tags:
+    - docker
+  apt:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    state: latest
