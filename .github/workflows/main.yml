@@ -1,26 +1,15 @@
-name: Ansible Lint
-
-on: [push, pull_request]
-
+name: Ansible files & Deployment 
+#
+on:
+  push:
+    paths:
+      - 'playbooks/**'
+  pull_request:
+    paths:
+      - 'playbooks/**'
+#
 jobs:
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    # Important: This sets up your GITHUB_WORKSPACE environment variable
-    - uses: actions/checkout@v2
-
-    - name: Lint Ansible Playbook
-      # replace "master" with any valid ref
-      uses: ansible/ansible-lint@main # or version tag instead of 'main'
-      with:
-        # [required]
-        # Paths to ansible files (i.e., playbooks, tasks, handlers etc..)
-        # or valid Ansible directories according to the Ansible role
-        # directory structure.
-        # If you want to lint multiple ansible files, use the following syntax
-        targets: |
-           playbook.example.yml
-        #   playbook_2.yml
-        #targets: playbook.exmaple.yml
+  ansible-lint:
+    uses: ansible/ansible-content-actions/.github/workflows/ansible_lint.yaml@main
+    with:
+      args: '-p playbooks'
