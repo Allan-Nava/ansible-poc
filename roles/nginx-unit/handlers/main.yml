@@ -1,0 +1,14 @@
+- name: unit start
+  service:
+    name: unit
+    state: started
+
+- name: unit stop
+  service:
+    name: unit
+    state: stopped
+
+- name: unit restart
+  service:
+    name: unit
+    state: restarted

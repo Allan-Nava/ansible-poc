@@ -1,0 +1,85 @@
+---
+- name: save correct local python version
+  tags:
+    - nginx-unit
+  set_fact:
+    python_local_version: "{{ ansible_python.version.major }}.{{ ansible_python.version.minor }}"
+
+- name: install apt key
+  tags:
+    - nginx-unit
+    - unit
+  apt_key:
+    url: https://unit.nginx.org/keys/nginx-keyring.gpg
+    keyring: /usr/share/keyrings/nginx-keyring.gpg
+    state: present
+
+- name: add nginx-unit repository
+  tags:
+    - nginx-unit
+    - unit
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/nginx-keyring.gpg] https://packages.nginx.org/unit/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} unit"
+    filename: unit
+
+- name: install
+  tags:
+    - nginx-unit
+    - unit
+  apt:
+    pkg: "{{ item }}"
+    state: latest
+    update_cache: yes
+  with_items:
+    - unit
+    - unit-dev
+    - "unit-python{{ python_local_version }}"
+
+- name: check if custom configuration exist
+  tags:
+    - nginx-unit
+    - unit
+  local_action:
+    module: stat
+    path: "files/{{ custom_files }}/var/lib/unit/conf.json"
+  register: custom_unitconf
+  vars:
+    ansible_become: false
+
+- name: check custom conf (debug)
+  tags:
+    - nginx-unit
+    - unit
+  debug: msg="{{ custom_unitconf }}"
+
+- name: copy custom conf if exists
+  tags:
+    - nginx-unit
+    - unit
+  copy:
+    #src: "../../../files/{{ custom_files }}/var/lib/unit/conf.json"
+    src: "files/{{ custom_files }}/var/lib/unit/conf.json"
+    dest: "/var/lib/unit/conf.json"
+    owner: root
+    group: root
+    mode: "{{ item.mode | default('0644') }}"
+    backup: "{{ item.backup | default('yes') }}"
+  when: custom_unitconf.stat.exists
+  notify:
+    - unit restart
+    
+- name: enable at boot
+  tags:
+    - nginx-unit
+    - unit
+  service:
+    name: unit
+    enabled: yes
+
+- name: started
+  tags:
+    - nginx-unit
+    - unit
+  service:
+    name: unit
+    state: started
