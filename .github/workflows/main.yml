@@ -14,13 +14,13 @@ jobs:
     - name: Lint Ansible Playbook
       # replace "master" with any valid ref
       uses: ansible/ansible-lint@main # or version tag instead of 'main'
-      #with:
+      with:
         # [required]
         # Paths to ansible files (i.e., playbooks, tasks, handlers etc..)
         # or valid Ansible directories according to the Ansible role
         # directory structure.
         # If you want to lint multiple ansible files, use the following syntax
-        # targets: |
-        #   playbook_1.yml
+        targets: |
+           playbook.example.yml
         #   playbook_2.yml
         #targets: playbook.exmaple.yml
