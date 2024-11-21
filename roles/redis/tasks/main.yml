@@ -1,0 +1,86 @@
+---
+- name: install apt key
+  tags:
+    - redis
+  apt_key:
+    url: https://packages.redis.io/gpg
+    keyring: /usr/share/keyrings/redis-archive-keyring.gpg
+    state: present
+
+
+- name: Add redis repository
+  tags:
+    - redis
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb {{ ansible_distribution_release }} main"
+    filename: redis
+
+- name: install
+  tags:
+    - redis
+  apt:
+    pkg: redis
+    state: latest
+    update_cache: yes
+
+
+- name: Configure
+  tags:
+    - redis
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    mode: 0775
+    backup: yes
+  with_items:
+    - { src: redis.conf.j2, dest: "/etc/redis/redis.conf" }
+  notify:
+    - redis-server restart
+
+
+- name: Configure
+  tags:
+    - redis
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    mode: 0775
+    backup: yes
+  with_items:
+    - { src: redis.conf.smtp.j2, dest: "/etc/redis/redis.conf" }
+  notify:
+    - redis-server restart
+  when: groups['smtp'] is defined and inventory_hostname in groups['smtp']
+
+
+- name: Configure
+  tags:
+    - redis
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    mode: 0775
+    backup: yes
+  with_items:
+    - { src: redis.conf.dispatcher.j2, dest: "/etc/redis/redis.conf" }
+  notify:
+    - redis-server restart
+  when: groups['dispatcher'] is defined and inventory_hostname in groups['dispatcher']
+
+- name: Configure
+  tags:
+    - redis
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    mode: 0775
+    backup: yes
+  with_items:
+    - { src: redis.conf.external.j2, dest: "/etc/redis/redis.conf" }
+  notify:
+    - redis-server restart
+  when: groups['external_ovh'] is defined and inventory_hostname in groups['external_ovh']

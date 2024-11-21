@@ -1,0 +1,19 @@
+daemonize yes
+supervised systemd
+protected-mode no
+pidfile /var/run/redis/redis-server.pid
+loglevel warning
+
+bind 127.0.0.1 {{ ansible_eth0.ipv4.address }}
+unixsocket /var/run/redis/redis.sock
+unixsocketperm 755
+
+tcp-backlog 65535
+tcp-keepalive 30
+
+lazyfree-lazy-user-del yes
+io-threads 2
+
+appendonly no
+stop-writes-on-bgsave-error no
+dir /var/lib/redis
